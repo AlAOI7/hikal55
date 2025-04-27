@@ -1,0 +1,756 @@
+  ////////////////////////////////start inserting Constraint///////////////////////////////////////
+                        if (Suspended != 1)
+                        {
+                            using (OracleCommand command2 = connection.CreateCommand())
+                            {
+                                command2.CommandText = "InsertPurchaseConstraints";
+                                command2.CommandType = CommandType.StoredProcedure;
+
+                                OracleParameter[] param2 = new OracleParameter[25];
+                                param2[0] = new OracleParameter("BillType", OracleDbType.Int32);
+                                param2[0].Value = BillType;
+
+
+                                param2[1] = new OracleParameter("BillDate", OracleDbType.Date);
+                                param2[1].Value = BillDate;
+
+                                param2[2] = new OracleParameter("BillNumber", OracleDbType.Int32);
+                                param2[2].Value = BillID;
+
+                                param2[3] = new OracleParameter("RefNumber", OracleDbType.Varchar2, 50);
+                                param2[3].Value = RefNumber;
+
+                                param2[4] = new OracleParameter("SupplierID", OracleDbType.Int32);
+                                param2[4].Value = SupplierID;
+
+                                param2[5] = new OracleParameter("CurrencyID", OracleDbType.Int32);
+                                param2[5].Value = CurrencyID;
+
+                                param2[6] = new OracleParameter("CurrencyValue", OracleDbType.Decimal);
+                                param2[6].Value = CurrencyValue;
+
+                                param2[7] = new OracleParameter("FundID", OracleDbType.Int32);
+                                param2[7].Value = FundID;
+
+                                param2[8] = new OracleParameter("PaymentMothed", OracleDbType.Int32);
+                                param2[8].Value = PaymentMethod;
+
+                                param2[9] = new OracleParameter("PaymentMothed1", OracleDbType.Int32);
+                                param2[9].Value = PaymentMethod1;
+
+                                param2[10] = new OracleParameter("RemainAmount", OracleDbType.Decimal);
+                                param2[10].Value = RemainAmount;
+
+                                param2[11] = new OracleParameter("PayedAmount", OracleDbType.Decimal);
+                                param2[11].Value = PayedAmount;
+
+                                param2[12] = new OracleParameter("StoreID", OracleDbType.Int32);
+                                param2[12].Value = StoreID;
+
+                                param2[13] = new OracleParameter("StoreCurValue", OracleDbType.Int32);
+                                param2[13].Value = StoreCurValue;
+
+                                param2[14] = new OracleParameter("BillStatement", OracleDbType.Varchar2, 250);
+                                param2[14].Value = BillStatement;
+
+                                param2[15] = new OracleParameter("ItemsDiscount", OracleDbType.Decimal);
+                                param2[15].Value = ItemsDiscount;
+
+                                param2[16] = new OracleParameter("BillDiscount", OracleDbType.Decimal);
+                                param2[16].Value = BillDiscount;
+
+                                param2[17] = new OracleParameter("NetBill", OracleDbType.Decimal);
+                                param2[17].Value = NetBill;
+
+                                param2[18] = new OracleParameter("TotalTax", OracleDbType.Decimal);
+                                param2[18].Value = TotalTax;
+
+                                param2[19] = new OracleParameter("TotalAvgCost", OracleDbType.Decimal);
+                                param2[19].Value = TotalAvgCost;
+
+                                param2[20] = new OracleParameter("FreeQtyCost", OracleDbType.Decimal);
+                                param2[20].Value = FreeQtyCost;
+
+                                param2[21] = new OracleParameter("Posted", OracleDbType.Int32);
+                                param2[21].Value = Posted;
+
+                                param2[22] = new OracleParameter("HasTax", OracleDbType.Int32);
+                                param2[22].Value = HasTax;
+
+                                param2[23] = new OracleParameter("CostCenNum", OracleDbType.Int32);
+                                param2[23].Value = CostCenterNumber;
+
+                                param2[24] = new OracleParameter("TotalBill", OracleDbType.Decimal);
+                                param2[24].Value = TotalBill;
+
+                                // Add parameters to the command
+                                command2.Parameters.AddRange(param2);
+
+
+                                command2.ExecuteNonQuery();
+
+                            }
+                        }
+
+
+
+
+====================================================================================================================
+PROCEDURE "INSERTPURCHASECONSTRAINTS" (
+  BillType       IN NUMBER,
+  BillDate       IN DATE,
+  BillNumber     IN NUMBER,
+  RefNumber      IN VARCHAR2,
+  SupplierID     IN NUMBER,
+  CurrencyID     IN NUMBER,
+  CurrencyValue  IN FLOAT,
+  FundID         IN NUMBER,
+  PaymentMothed  IN NUMBER,
+  PaymentMothed1  IN NUMBER,
+  RemainAmount  IN FLOAT,
+  PayedAmount  IN FLOAT,
+  StoreID        IN NUMBER,
+  StoreCurValue  IN FLOAT,
+  BillStatement  IN VARCHAR2,
+  ItemsDiscount  IN FLOAT,
+  BillDiscount   IN FLOAT,
+  NetBill        IN FLOAT,
+  TotalTax       IN FLOAT,
+  TotalAvragCost IN FLOAT,
+  FreeQtyCost    IN FLOAT,
+  Posted         IN NUMBER,
+  HasTax         IN NUMBER,
+  CostCenNum     IN NUMBER,
+  TotalBill     IN FLOAT
+) AS
+  StoreAccID      NUMBER;
+  StoreGroup      NUMBER;
+  TaxAccID        NUMBER;
+  DiffCostAccID   NUMBER;
+  EffectItemDisc  NUMBER;
+  Amount          FLOAT;
+  StoreCost       FLOAT;
+  EarnDiscount    FLOAT;
+  DiffCost        FLOAT;
+  StoreCurrID     NUMBER;
+  AccountID       NUMBER;
+  AcIDEarnedDis   NUMBER;
+  AcIDFreeQtyCost NUMBER;
+  vTotalAvragCost  FLOAT;
+BEGIN
+ 
+	SELECT        SUBACCOUNTS.ACCID  INTO StoreAccID
+		FROM            STORES INNER JOIN
+                         SUBACCOUNTS ON STORES.STOREACCNUMBER = SUBACCOUNTS.ACCNUMBER WHERE STORES.STOREID = StoreID AND ROWNUM = 1;
+
+
+	  SELECT
+          ACCID INTO AcIDEarnedDis
+        FROM
+            REFACCOUNTS
+INNER JOIN  SUBACCOUNTS ON  SUBACCOUNTS.ACCNUMBER = REFACCOUNTS.ACCNAMBER
+
+WHERE  REFACCOUNTS.ACCTAG = 7;
+
+  SELECT
+  ACCID INTO AcIDFreeQtyCost
+        FROM
+            REFACCOUNTS
+			INNER JOIN  SUBACCOUNTS ON  SUBACCOUNTS.ACCNUMBER = REFACCOUNTS.ACCNAMBER
+			WHERE  REFACCOUNTS.ACCTAG = 8;
+    
+
+    IF HasTax = 1 THEN
+      SELECT ACCID INTO TaxAccID
+      FROM MEDIATRESSACCS INNER JOIN  SUBACCOUNTS ON  SUBACCOUNTS.ACCNUMBER = MEDIATRESSACCS.ACCNAMBER 
+      WHERE MEDIATRESSACCS.ACCTAG = 5;
+    END IF;
+    
+
+    SELECT CurrencyID INTO StoreCurrID
+    FROM Currencies
+    WHERE StoreCurrency = 1;
+
+     IF HasTax = 1 THEN
+      Amount := NetBill + TotalTax;
+    ELSE
+      Amount := NetBill;
+    END IF;
+    
+    Amount := (Amount * CurrencyValue) / StoreCurValue;
+	/*SELECT EffectDiscountPerItem INTO EffectItemDisc
+    FROM PurchaseSettings;*/
+    -- Casha and Debit اذا كانت طرق الدفع نفدا واجل
+	
+    EarnDiscount := ItemsDiscount + BillDiscount;
+   /* IF EffectItemDisc = 1 THEN
+      EarnDiscount := ItemsDiscount + BillDiscount;
+    ELSE
+      EarnDiscount := BillDiscount;
+    END IF;*/
+	StoreCost := NetBill  + EarnDiscount;
+  /*  IF FreeQtyEffect = 1 THEN
+      StoreCost := NetBill + BillExpenses + EarnDiscount;
+    ELSE
+      StoreCost := NetBill + BillExpenses + EarnDiscount + FreeQtyCost;
+    END IF;*/
+    
+   
+
+    
+    IF BillType = 6 THEN -- Case of BuyBill
+      -- Save in AccountOperations Table
+	  IF PaymentMothed = 1 AND PaymentMothed1  = 2 THEN 
+
+	  ---- Insert Credit ادخال الى حساب الصندوق مدين 
+      INSERT INTO AccountOperations (
+        OperationType,
+		OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        FundID,
+		0,
+       PayedAmount,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+	  ---- Insert Credit ادخال الى حساب المورد دائن
+	    INSERT INTO AccountOperations (
+        OperationType,
+		OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        SupplierID,
+		0,
+        RemainAmount,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+
+    ELSIF PaymentMothed = 1 OR PaymentMothed = 3 THEN
+      AccountID :=FundID ;
+	   ---- Insert Credit حساب الصندوق او المورد 
+      INSERT INTO AccountOperations (
+        OperationType,
+		OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        AccountID,
+        0,
+        Amount,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+    ELSE 
+      AccountID := SupplierID;
+	   ---- Insert Credit حساب الصندوق او المورد 
+      INSERT INTO AccountOperations (
+        OperationType,
+		OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        AccountID,
+        0,
+        Amount,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+	  END IF;
+	  ---- Insert Debit حساب المخزون 
+    INSERT INTO AccountOperations (
+        OperationType,
+        OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        StoreAccID,
+        StoreCost,
+        0,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+	  ---- Insert Debit حساب الضريبه المضافه 
+      IF HasTax = 1 AND TotalTax > 0 THEN
+        INSERT INTO AccountOperations (
+          OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+        )
+        VALUES (
+          BillType,
+          BillDate,
+          BillNumber,
+          RefNumber,
+          TaxAccID,
+          TotalTax,
+          0,
+          StoreCurrID,
+          StoreCurValue,
+          'مستحق ضريبة القيمة المضافة لفاتورة مشتريات رقم ' || TO_CHAR(BillNumber),
+          Posted
+        );
+      END IF;
+
+	  ---- Insert Credit حساب الصندوق او المورد 
+     /* INSERT INTO AccountOperations (
+        OperationType,
+		OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        AccountID,
+        0,
+        Amount,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );*/
+
+    /*  INSERT INTO AccountOperations (
+        OperationType,
+        OperationDate,
+        OperationID,
+        OperationRef,
+        AccountNumber,
+        OperationDebit,
+        OperationCredit,
+        CurrencyID,
+        CurrencyValue,
+        OperationStatement,
+        Posted
+      )
+      VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        StoreAccID,
+        0,
+        StoreCost,
+        StoreCurrID,
+        StoreCurValue,
+        'مشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+	  */
+	  ---- Insert Credit حساب الخصم المكتسب  
+
+      IF BillDiscount  > 0 or ItemsDiscount>0 THEN
+        INSERT INTO AccountOperations (
+          OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+        )
+        VALUES (
+          BillType,
+          BillDate,
+          BillNumber,
+          RefNumber,
+          AcIDEarnedDis,
+          0,
+         EarnDiscount,
+          StoreCurrID,
+          StoreCurValue,
+          'قيمة الخصم المكتسب لفاتورة مشتريات رقم ' || TO_CHAR(BillNumber),
+          Posted
+        );
+      END IF;
+/*
+      IF  FreeQtyCost > 0 THEN
+        INSERT INTO AccountOperations (
+          OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+        )
+        VALUES (
+          BillType,
+          BillDate,
+          BillNumber,
+          RefNumber,
+          AcIDFreeQtyCost,
+          0,
+          FreeQtyCost * CurrencyValue / StoreCurValue,
+          StoreCurrID,
+          StoreCurValue,
+          'تكلفة الكميات المجانية لفاتورة مشتريات رقم ' || TO_CHAR(BillNumber),
+          Posted
+        );
+      END IF;
+	  */
+   IF CostCenNum > 0 THEN -- Save in CostCenOperations Table
+  INSERT INTO CostCenOperations (
+    OperationType,
+    OperationDate,
+    OperationID,
+    OperationRef,
+    CostCenID,
+    OperationDebit,
+    OperationCredit,
+    CurrencyValue,
+    OperationStatement
+  )
+  VALUES
+   (
+    BillType,
+    BillDate,
+    BillNumber,
+    RefNumber,
+    CostCenNum,
+    0,
+    Amount,
+    CurrencyValue,
+    BillStatement
+  );
+END IF;
+END IF;--- end Purchase bill constraint
+
+ IF BillType = 7 THEN
+
+ IF PaymentMothed = 1 OR PaymentMothed = 3   THEN
+  AccountID := FundID ;
+ELSE
+  AccountID := SupplierID;
+END IF;
+
+    vTotalAvragCost := TotalAvragCost + FreeQtyCost;
+    DiffCost := StoreCost - vTotalAvragCost;
+
+	 SELECT ACCID INTO DiffCostAccID
+      FROM MEDIATRESSACCS INNER JOIN  SUBACCOUNTS ON  SUBACCOUNTS.ACCNUMBER = MEDIATRESSACCS.ACCNAMBER -- لجلب حساب فوارق تكلفة مردود المشتريات
+      WHERE MEDIATRESSACCS.ACCTAG = 7;
+
+    INSERT INTO AccountOperations (---- Insert Debit حساب الصندوق او المورد
+      OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+    ) VALUES (
+      BillType,
+      BillDate,
+      BillNumber,
+      RefNumber,
+      AccountID,
+      Amount,
+      0,
+      CurrencyID,
+      CurrencyValue,
+      BillStatement,
+      Posted
+    );
+
+    IF EarnDiscount > 0 THEN
+      INSERT INTO AccountOperations (---- Insert Debit حساب الخصم المكتسب 
+        OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        AcIDEarnedDis,
+        EarnDiscount,
+        0,
+        StoreCurrID,
+        StoreCurValue,
+        'قيمة مرتجع الخصم المكتسب لفاتورة مرتجع مشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+    END IF;
+
+   /* IF FreeQtyEffect = 2 AND FreeQtyCost > 0 THEN
+      INSERT INTO AccountOperations (
+         OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+		RefNumber,
+        AcIDFreeQtyCost,
+        FreeQtyCost,
+        0,
+        StoreCurrID,
+        StoreCurValue,
+        'قيمة مرتجع الكمية المجانية لفاتورة مرتجع مشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+    END IF;*/
+
+    IF HasTax = 1 AND TotalTax > 0 THEN
+      INSERT INTO AccountOperations (
+         OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        TaxAccID,
+        0,
+        TotalTax,
+        StoreCurrID,
+        StoreCurValue,
+        'مستحق ضريبه القيمة المضافه لفاتوره مرتجع المشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+    END IF;
+
+    IF DiffCost > 0 THEN
+      INSERT INTO AccountOperations (---- Insert Credit حساب فارق تكلفة مردود المشتريات  
+         OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        DiffCostAccID,
+        0,
+        DiffCost,
+        StoreCurrID,
+        StoreCurValue,
+        'فارق التكلفه لفاتورة مرتجع المشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+    END IF;
+
+	 IF DiffCost < 0 THEN
+      INSERT INTO AccountOperations (---- Insert Debit حساب فارق تكلفة مردود المشتريات  
+         OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        DiffCostAccID,
+        ABS(DiffCost),
+        0,
+        StoreCurrID,
+        StoreCurValue,
+        'فارق التكلفه لفاتورة مرتجع المشتريات رقم ' || TO_CHAR(BillNumber),
+        Posted
+      );
+    END IF;
+
+    IF StoreCost > 0 THEN
+      INSERT INTO AccountOperations (---- Insert Credit حساب المخزون  
+        OperationType,
+          OperationDate,
+          OperationID,
+          OperationRef,
+          AccountNumber,
+          OperationDebit,
+          OperationCredit,
+          CurrencyID,
+          CurrencyValue,
+          OperationStatement,
+          Posted
+      ) VALUES (
+        BillType,
+        BillDate,
+        BillNumber,
+        RefNumber,
+        StoreAccID,
+        0,
+        vTotalAvragCost,
+        StoreCurrID,
+        StoreCurValue,
+        BillStatement,
+        Posted
+      );
+    END IF;
+
+IF CostCenNum > 0 THEN -- Save in CostCenOperations Table
+  INSERT INTO CostCenOperations (
+    OperationType,
+    OperationDate,
+    OperationID,
+    OperationRef,
+    CostCenID,
+    OperationDebit,
+    OperationCredit,
+    CurrencyValue,
+    OperationStatement
+  )
+  VALUES
+   (
+    BillType,
+    BillDate,
+    BillNumber,
+    RefNumber,
+    CostCenNum,
+    Amount,
+    0,
+    CurrencyValue,
+    BillStatement
+  );
+END IF;
+
+    UPDATE AccountOperations SET Posted = 1 WHERE OperationType = BillType AND OperationID = BillNumber;
+  END IF;
+
+END;
